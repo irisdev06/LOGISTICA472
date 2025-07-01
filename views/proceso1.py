@@ -51,7 +51,10 @@ def modificar_rad_salida(df):
 # ---- GRAFICAS --------
 # ----- ---- ---- ---- ----
 # Colores
-locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8') 
+try:
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+except locale.Error:
+    locale.setlocale(locale.LC_TIME, 'C')
 colores = ['#FFB897', '#B8E6A7', '#809bce', "#64a09d", '#CBE6FF']
 
 # Función para graficar el gráfico de torta con los datos de COURIER y agregarlo al Excel
