@@ -318,59 +318,73 @@ def crear_tabla_mensajero(df_mensajero, writer):
 #  Función de procesamiento de datos
 def procesar_datos(archivo1, archivo2):
     try:
+        # Inicializar los DataFrames
+        df1_courier = df1_mensajero = df2_courier = df2_mensajero = None
+
         # Procesar el primer archivo
         if archivo1.name.endswith((".xlsx", ".xls")):
             xl1 = pd.ExcelFile(archivo1)
-            if 'COURIER' in xl1.sheet_names and 'MENSAJERO' in xl1.sheet_names:
+            # Verificar si las hojas COURIER y MENSAJERO están en el primer archivo
+            if 'COURIER' in xl1.sheet_names:
                 df1_courier = xl1.parse('COURIER')
+            if 'MENSAJERO' in xl1.sheet_names:
                 df1_mensajero = xl1.parse('MENSAJERO')
-            else:
-                return None, None
-        else:
-            return None, None
 
         # Procesar el segundo archivo
         if archivo2.name.endswith((".xlsx", ".xls")):
             xl2 = pd.ExcelFile(archivo2)
-            if 'COURIER' in xl2.sheet_names and 'MENSAJERO' in xl2.sheet_names:
+            # Verificar si las hojas COURIER y MENSAJERO están en el segundo archivo
+            if 'COURIER' in xl2.sheet_names:
                 df2_courier = xl2.parse('COURIER')
+            if 'MENSAJERO' in xl2.sheet_names:
                 df2_mensajero = xl2.parse('MENSAJERO')
-            else:
-                return None, None
-        else:
-            return None, None
 
-        # Renombrar las columnas para que coincidan en cada hoja
-        df1_courier = renombrar_columnas(df1_courier)
-        df2_courier = renombrar_columnas(df2_courier)
-        df1_mensajero = renombrar_columnas(df1_mensajero)
-        df2_mensajero = renombrar_columnas(df2_mensajero)
+        # Si hay hojas COURIER, renombrarlas y procesarlas
+        if df1_courier is not None:
+            df1_courier = renombrar_columnas(df1_courier)
+        if df2_courier is not None:
+            df2_courier = renombrar_columnas(df2_courier)
 
-        # Reemplazar "GUIA ASEGURADO" por "DIRECCION" en la hoja MENSAJERO
-        df1_mensajero = reemplazar_columna_guias(df1_mensajero)
-        df2_mensajero = reemplazar_columna_guias(df2_mensajero)
+        # Si hay hojas MENSAJERO, renombrarlas y procesarlas
+        if df1_mensajero is not None:
+            df1_mensajero = renombrar_columnas(df1_mensajero)
+        if df2_mensajero is not None:
+            df2_mensajero = renombrar_columnas(df2_mensajero)
+
+        # Reemplazar "GUIA ASEGURADO" por "DIRECCION" en MENSAJERO
+        if df1_mensajero is not None:
+            df1_mensajero = reemplazar_columna_guias(df1_mensajero)
+        if df2_mensajero is not None:
+            df2_mensajero = reemplazar_columna_guias(df2_mensajero)
 
         # Combinar los DataFrames de las hojas COURIER y MENSAJERO
-        df_courier = pd.concat([df1_courier, df2_courier], ignore_index=True)
-        df_mensajero = pd.concat([df1_mensajero, df2_mensajero], ignore_index=True)
+        df_courier = pd.concat([df1_courier, df2_courier], ignore_index=True) if df1_courier is not None or df2_courier is not None else pd.DataFrame()
+        df_mensajero = pd.concat([df1_mensajero, df2_mensajero], ignore_index=True) if df1_mensajero is not None or df2_mensajero is not None else pd.DataFrame()
 
         # Ordenar por fecha (de más antiguo a más reciente)
-        df_courier = ordenar_por_fecha(df_courier)
-        df_mensajero = ordenar_por_fecha(df_mensajero)
+        if not df_courier.empty:
+            df_courier = ordenar_por_fecha(df_courier)
+        if not df_mensajero.empty:
+            df_mensajero = ordenar_por_fecha(df_mensajero)
 
         # Modificar la columna "RAD DE SALIDA" usando la nueva función
-        df_courier = modificar_rad_salida(df_courier)
-        df_mensajero = modificar_rad_salida(df_mensajero)
+        if not df_courier.empty:
+            df_courier = modificar_rad_salida(df_courier)
+        if not df_mensajero.empty:
+            df_mensajero = modificar_rad_salida(df_mensajero)
 
         # Eliminar duplicados (opcional, según el caso)
-        df_courier = df_courier.drop_duplicates()
-        df_mensajero = df_mensajero.drop_duplicates()
+        if not df_courier.empty:
+            df_courier = df_courier.drop_duplicates()
+        if not df_mensajero.empty:
+            df_mensajero = df_mensajero.drop_duplicates()
 
         return df_courier, df_mensajero
 
     except Exception as e:
         print(f"Error: {e}")
         return None, None
+
 
 # Guardar el archivo Excel generado
 def guardar_archivo_excel(df_courier, df_mensajero):
